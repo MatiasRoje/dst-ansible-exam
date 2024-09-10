@@ -3,13 +3,3 @@
   remote_user: root
   roles:
     - wordpress
-
-def test_wordpress_service(host):
-    apache = host.service("apache2")
-    assert apache.is_running
-    assert apache.is_enabled
-
-def test_wordpress_page(host):
-    result = host.curl("http://localhost")
-    assert result.status_code == 200
-    assert "WordPress" in result.content

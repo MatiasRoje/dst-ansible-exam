@@ -5,7 +5,7 @@
   vars:
     db_name: wordpress_db
     db_username: wp_user
-    db_user_password: wp_user_password
+    db_user_password: {{ db_password }}
   roles:
     - mysql
 
@@ -15,7 +15,7 @@
   vars:
     wp_db_name: wordpress_db
     wp_db_user: wp_user
-    wp_db_password: wp_user_password
+    wp_db_password: {{ db_password }}
     wp_db_host: 3.253.27.188  # MySQL server public IP
     wp_sitename: ansible.matiasroje-devops.dns-dynamic.net
   roles:
