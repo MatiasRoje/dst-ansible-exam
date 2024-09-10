@@ -1,0 +1,16 @@
+<VirtualHost *:80>
+    ServerAdmin webmaster@localhost
+    DocumentRoot {{ wp_install_dir }}
+
+    ServerName {{ site_name }}
+    ServerAlias www.{{ site_name }}
+
+    <Directory {{ wp_install_dir }}>
+        Options FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>

@@ -1,0 +1,6 @@
+all:
+  hosts:
+    web:
+      ansible_host: 54.195.181.122  # Public IP for WordPress EC2 instance
+    db:
+      ansible_host: 3.253.27.188  # Public IP for MySQL EC2 instance

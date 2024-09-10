@@ -1,0 +1,122 @@
+---
+# Install required PHP and MySQL packages
+- name: WordPress | Install PHP and modules
+  apt:
+    pkg:
+      - php
+      - php-cli
+      - libapache2-mod-php
+      - php-mysql
+      - php-curl
+      - php-gd
+      - php-mbstring
+      - php-xml
+    update_cache: yes
+    state: present
+
+# Remove default index.html if installing to /var/www/html
+- name: WordPress | Delete items from /var/www/html/
+  file:
+    path: /var/www/html/index.html
+    state: absent
+  when: wp_install_dir == "/var/www/html"
+
+# Create WordPress installation directory
+- name: WordPress | Create Directory
+  file:
+    path: "{{ wp_install_dir }}"
+    state: directory
+    mode: 0755
+
+# Download and extract WordPress
+- name: WordPress | Extract archive to {{ wp_install_dir }}
+  unarchive:
+    src: "http://wordpress.org/wordpress-{{ wp_version }}.tar.gz"
+    dest: "{{ wp_install_dir }}"
+    remote_src: yes
+
+# Move files to the root of the installation directory
+- name: WordPress | Move files from {{ wp_install_dir }}/wordpress to {{ wp_install_dir }}
+  command: cp -rf . "{{ wp_install_dir }}"
+  args:
+    chdir: "{{ wp_install_dir }}/wordpress/"
+
+# Remove unnecessary WordPress directory
+- name: WordPress | Delete wordpress directory
+  file:
+    path: "{{ wp_install_dir }}/wordpress/"
+    state: absent
+
+# Get random salts for wp-config.php
+- name: WordPress | Get random salts for wp-config.php
+  delegate_to: localhost
+  uri:
+    url: https://api.wordpress.org/secret-key/1.1/salt/
+    return_content: yes
+  register: wp_salt_array
+
+- name: Set wp_salt fact
+  set_fact:
+    wp_salt: "{{ wp_salt_array.content }}"
+
+# Copy wp-config.php template
+- name: WordPress | Copy wp-config.php
+  template:
+    src: wp-config.php.j2
+    dest: "{{ wp_install_dir }}/wp-config.php"
+
+# Change ownership of WordPress files
+- name: WordPress | Change the owner of the installation directory
+  file:
+    path: "{{ wp_install_dir }}"
+    owner: www-data
+    group: www-data
+    state: directory
+    recurse: yes
+
+# Install Apache web server
+- name: WordPress | Install Apache
+  apt:
+    name: apache2
+    state: present
+
+# Enable Apache rewrite module
+- name: WordPress | Enable Apache rewrite module
+  command: a2enmod rewrite
+
+# Configure Apache virtual host
+- name: WordPress | Configure Apache virtual host
+  template:
+    src: apache-vhost.j2
+    dest: /etc/apache2/sites-available/{{ wp_sitename }}.conf
+
+# Enable Apache virtual host
+- name: WordPress | Enable virtual host
+  command: a2ensite "{{ wp_sitename }}"
+
+# Disable default virtual host
+- name: WordPress | Disable default Apache virtual host
+  command: a2dissite 000-default.conf
+
+- name: WordPress | Determine the location of the PHP FPM socket
+  shell: dpkg -l | grep php-fpm | awk '{print $3}' | grep -o '[0-9]\.[0-9]' | head -n 1
+  register: "php_ver"
+
+- name: Start php service{{ php_ver.stdout }}
+  service:
+    name: "php{{ php_ver.stdout }}-fpm"
+    state: started
+    enabled: yes
+
+# Restart Apache service
+- name: WordPress | Start Apache
+  service:
+    name: apache2
+    state: started
+    enabled: yes
+
+- name: Install mysql client
+  apt:
+    name: mysql-client
+    state: present
+  become: yes

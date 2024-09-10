@@ -1,0 +1,67 @@
+---
+- name: Update the system
+  apt:
+    name: "*"
+    state: latest
+  become: yes
+
+- name: Populate Apt's Cache with package definitions to avoid "no such package" errors
+  apt:
+    update_cache: true
+  become: yes
+
+- name: Install Python and pip
+  apt:
+    name:
+      - python3
+      - python3-pip
+    state: present
+  become: true
+
+- name: Install MySQL server
+  apt:
+    name:
+      - mysql-server
+    state: present
+  become: yes
+
+- name: Install PyMySQL (Python's MySQL module dependency)
+  apt:
+    name: python3-pymysql
+    state: present
+  become: true
+
+- name: Enable and start MySQL service
+  systemd:
+    name: mysql
+    enabled: yes
+    state: started
+  become: yes
+
+- name: Modify MySQL configuration to allow remote connections
+  lineinfile:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    regexp: '^bind-address\s*='
+    line: 'bind-address = 0.0.0.0'
+  notify: Restart MySQL
+  become: yes
+
+- name: Create a Mysql database
+  mysql_db:
+    name: "{{ db_name }}"
+    state: present
+    login_unix_socket: /run/mysqld/mysqld.sock
+  become: yes
+
+- name: Create a Mysql user
+  mysql_user:
+    name: "{{ db_username }}"
+    host: '%'
+    password: "{{ db_user_password }}"
+    priv: "{{ db_name }}.*:ALL"
+    login_unix_socket: /run/mysqld/mysqld.sock
+  become: yes
+
+- name: Display MySQL Installed message
+  debug:
+    msg: "MySQL Server Installed and Configured"

@@ -17,9 +17,9 @@ resource "aws_key_pair" "ansible" {
   public_key = file("~/.ssh/ansible.pub")
 }
 
-# Security group for Magento server
-resource "aws_security_group" "magento_sg" {
-  name        = "magento_sg"
+# Security group for wordpress server
+resource "aws_security_group" "wordpress_sg" {
+  name        = "wordpress_sg"
   description = "Allow HTTP and SSH traffic"
 
   ingress {
@@ -71,22 +71,22 @@ resource "aws_security_group" "mysql_sg" {
   }
 }
 
-# EC2 instance for Magento
-resource "aws_instance" "magento" {
-  ami           = "ami-03cc8375791cb8bcf" # Ubuntu Server 24.04
-  instance_type = "t2.micro"
+# EC2 instance for wordpress
+resource "aws_instance" "wordpress" {
+  ami           = "ami-0932dacac40965a65" # Ubuntu Server 22.04
+  instance_type = "t2.small"
   key_name      = aws_key_pair.ansible.key_name
 
-  vpc_security_group_ids = [aws_security_group.magento_sg.id]
+  vpc_security_group_ids = [aws_security_group.wordpress_sg.id]
 
   tags = {
-    Name = "Magento-Server"
+    Name = "Wordpress-Server"
   }
 }
 
 # EC2 instance for MySQL
 resource "aws_instance" "mysql" {
-  ami           = "ami-03cc8375791cb8bcf" # Ubuntu Server 24.04
+  ami           = "ami-0932dacac40965a65" # Ubuntu Server 22.04
   instance_type = "t2.micro"
   key_name      = aws_key_pair.ansible.key_name
 
@@ -97,8 +97,8 @@ resource "aws_instance" "mysql" {
   }
 }
 
-output "magento_instance_public_ip" {
-  value = aws_instance.magento.public_ip
+output "wordpress_instance_public_ip" {
+  value = aws_instance.wordpress.public_ip
 }
 
 output "mysql_instance_public_ip" {

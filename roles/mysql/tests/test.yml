@@ -1,0 +1,15 @@
+---
+- hosts: localhost
+  remote_user: root
+  roles:
+    - mysql
+
+def test_mysql_service(host):
+    mysql = host.service("mysql")
+    assert mysql.is_running
+    assert mysql.is_enabled
+
+def test_mysql_connection(host):
+    result = host.run("mysql -u wp_user -p'root_password' -e 'SHOW DATABASES;'")
+    assert result.rc == 0
+    assert 'wordpress_db' in result.stdout
